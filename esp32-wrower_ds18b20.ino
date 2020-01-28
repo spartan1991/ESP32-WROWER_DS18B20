@@ -80,24 +80,24 @@ void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char
   } 
 }
 
-void getSensorTempF(DeviceAddress addr, float correct, char* tempBufF){
-  float tempF;
-  sensor.requestTemperatures();
-  tempF = sensor.getTempF(addr);
-  if(tempF == 85.0 || tempF == (-127.0)){
-    tempF = 0;
-    dtostrf(tempF, 3, 2, tempBufF);
-  }
-  else{
-    dtostrf(tempF + correct, 2, 2, tempBufF);
-  } 
-}
+//void getSensorTempF(DeviceAddress addr, float correct, char* tempBufF){
+//  float tempF;
+//  sensor.requestTemperatures();
+//  tempF = sensor.getTempF(addr);
+//  if(tempF == 85.0 || tempF == (-127.0)){
+//    tempF = 0;
+//    dtostrf(tempF, 3, 2, tempBufF);
+//  }
+//  else{
+//    dtostrf(tempF + correct, 2, 2, tempBufF);
+//  } 
+//}
 
 void getTemperature() {  
 
   getSensorTempC(sensor1, 0.0, prevTempC1Ptr, sensor1CString);
-  getSensorTempC(sensor2, 0.5, prevTempC2Ptr, sensor2CString);
-  getSensorTempC(sensor3, 0.0, prevTempC3Ptr, sensor3CString);
+  getSensorTempC(sensor2, 0.0, prevTempC2Ptr, sensor2CString);
+  getSensorTempC(sensor3, 0.6, prevTempC3Ptr, sensor3CString);
 
   delay(50);
 }
@@ -170,11 +170,12 @@ void loop() {
   http_client.begin("http://192.168.1.6/tcontrol_war_exploded/saveData");              //Specify request destination
   http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpCode = http_client.POST(postData);   //Send the request
+  Serial.println(postData); //DEBUG
   String payload = http_client.getString();    //Get the response payload
 
 
-  //Serial.println(httpCode); //DEBUG
-  //Serial.println(payload); //DEBUG
+  Serial.println(httpCode); //DEBUG
+  Serial.println(payload); //DEBUG
 
   http_client.end();
   
