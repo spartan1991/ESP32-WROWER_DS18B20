@@ -33,6 +33,9 @@ DeviceAddress sensor1 = {0x28, 0xFE, 0xF1, 0x45, 0x92, 0x11, 0x2, 0x86};
 DeviceAddress sensor2 = {0x28, 0xD, 0xA1, 0x45, 0x92, 0xC, 0x2, 0x5D};
 DeviceAddress sensor3 = {0x28, 0xFF, 0x5D, 0x67, 0x23, 0x16, 0x4, 0x70};
 
+byte counter = 0;
+byte* counterPtr = &counter;
+
 float prevTempC1 = 0.0;
 float prevTempC2 = 0.0;
 float prevTempC3 = 0.0;
@@ -61,14 +64,21 @@ void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char
   sensor.requestTemperatures();
   tempC = sensor.getTempC(addr);
   if(tempC >= 85.0 || tempC <= (-100.0)){
-      dtostrf(*prevTempCPtr, 2, 2, tempBufC); //Anti crash
+      if(*counterPtr++ < 3){
+        dtostrf(*prevTempCPtr, 2, 2, tempBufC); //Anti crash
+      }
+      else {
+        *counterPtr = 0;
+        dtostrf((*prevTempCPtr = 0.00), 2, 2, tempBufC);
+      }
   }
+  
   else if(tempC == 0.00){
     sensor.requestTemperatures();
       tempC = sensor.getTempC(addr);
    }
   else if(tempC == 0.00){
-    sensor.requestTemperatures();
+    //sensor.requestTemperatures();
       tempC = sensor.getTempC(addr);
    }
    else if(tempC == 0.00){
