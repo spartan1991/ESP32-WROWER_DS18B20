@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClient.h>
-
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -65,12 +64,15 @@ void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char
       dtostrf(*prevTempCPtr, 2, 2, tempBufC); //Anti crash
   }
   else if(tempC == 0.00){
+    sensor.requestTemperatures();
       tempC = sensor.getTempC(addr);
    }
   else if(tempC == 0.00){
+    sensor.requestTemperatures();
       tempC = sensor.getTempC(addr);
    }
    else if(tempC == 0.00){
+    sensor.requestTemperatures();
       tempC = sensor.getTempC(addr);
    }
   else{
@@ -97,7 +99,7 @@ void getTemperature() {
 
   getSensorTempC(sensor1, 0.0, prevTempC1Ptr, sensor1CString);
   getSensorTempC(sensor2, 0.0, prevTempC2Ptr, sensor2CString);
-  getSensorTempC(sensor3, 0.6, prevTempC3Ptr, sensor3CString);
+  getSensorTempC(sensor3, 0.0, prevTempC3Ptr, sensor3CString);
 
   delay(50);
 }
@@ -145,6 +147,7 @@ void loop() {
   getTemperature();
 
   WiFiClient wifi_client;
+  Serial.println();
   Serial.print("Create WiFi client - ");
   
   if(!wifi_client.connect(host, port)){
@@ -183,8 +186,15 @@ void loop() {
   if(wifi_client.connected()){
     wifi_client.stop();
   }
-  Serial.println();
   Serial.println("Closing connection");
+  Serial.println();
+  Serial.print("CPU frequency in MHz: ");
+  Serial.println(ESP.getCpuFreqMHz());
+  Serial.print("Flash chip size (in bytes): ");
+  Serial.println(ESP.getFlashChipSize());
+  Serial.print("Free RAM memory (Heap): ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println();
   Serial.println("*************************************************"); 
   delay(1000);
 }
