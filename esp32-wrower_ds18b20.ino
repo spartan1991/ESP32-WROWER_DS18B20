@@ -7,13 +7,14 @@
 // вписываем здесь SSID и пароль для вашей WiFi-сети:
 const char* ssid = "netis";
 const char* password = "vovik1991";
-const char* host = "192.168.1.6";
+const char* host = "192.168.1.5";
 const int port = 80;
 
-//const int uartTxPin = 1; //For interrupts
-//const int uartRxPin = 3; //For interrupts
+const int uartTxPin = 1; //For interrupts
+const int uartRxPin = 3; //For interrupts
 
-const int sensorLed = 4;
+const int wlanLed = 32;
+const int sensorLed = 33;
 const int uartTxLed = 14;
 const int uartRxLed = 12;
 
@@ -52,44 +53,52 @@ char sensor3CString[6];
 //char sensor2FString[6];
 //char sensor3FString[6];
 
-void ledBlink(int ledPin, int msPause){
+void ledOn(int ledPin) {
   digitalWrite(ledPin, HIGH);
-  delay(msPause);
+}
+
+void ledOff(int ledPin) {
   digitalWrite(ledPin, LOW);
+}
+
+void ledBlink(int ledPin, int msPause) {
+  ledOn(ledPin);
+  delay(msPause);
+  ledOff(ledPin);
   delay(msPause);
 }
 
-void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char* tempBufC){
+void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char* tempBufC) {
   float tempC;
   sensor.requestTemperatures();
   tempC = sensor.getTempC(addr);
-  if(tempC >= 85.0 || tempC <= (-100.0)){
-      if(*counterPtr++ < 3){
-        dtostrf(*prevTempCPtr, 2, 2, tempBufC); //Anti crash
-      }
-      else {
-        *counterPtr = 0;
-        dtostrf((*prevTempCPtr = 0.00), 2, 2, tempBufC);
-      }
+  if (tempC >= 85.0 || tempC <= (-100.0)) {
+    if (*counterPtr++ < 3) {
+      dtostrf(*prevTempCPtr, 2, 2, tempBufC); //Anti crash
+    }
+    else {
+      *counterPtr = 0;
+      dtostrf((*prevTempCPtr = 0.00), 2, 2, tempBufC);
+    }
   }
-  
-  else if(tempC == 0.00){
+
+  else if (tempC == 0.00) {
     sensor.requestTemperatures();
-      tempC = sensor.getTempC(addr);
-   }
-  else if(tempC == 0.00){
+    tempC = sensor.getTempC(addr);
+  }
+  else if (tempC == 0.00) {
     //sensor.requestTemperatures();
-      tempC = sensor.getTempC(addr);
-   }
-   else if(tempC == 0.00){
+    tempC = sensor.getTempC(addr);
+  }
+  else if (tempC == 0.00) {
     sensor.requestTemperatures();
-      tempC = sensor.getTempC(addr);
-   }
-  else{
+    tempC = sensor.getTempC(addr);
+  }
+  else {
     *prevTempCPtr = tempC;
     dtostrf(tempC + correct, 2, 2, tempBufC);
-    ledBlink(sensorLed, 20);
-  } 
+    ledBlink(sensorLed, 30);
+  }
 }
 
 //void getSensorTempF(DeviceAddress addr, float correct, char* tempBufF){
@@ -102,10 +111,10 @@ void getSensorTempC(DeviceAddress addr, float correct, float* prevTempCPtr, char
 //  }
 //  else{
 //    dtostrf(tempF + correct, 2, 2, tempBufF);
-//  } 
+//  }
 //}
 
-void getTemperature() {  
+void getTemperature() {
 
   getSensorTempC(sensor1, 0.0, prevTempC1Ptr, sensor1CString);
   getSensorTempC(sensor2, 0.0, prevTempC2Ptr, sensor2CString);
@@ -114,14 +123,34 @@ void getTemperature() {
   delay(50);
 }
 
+//  void IRAM_ATTR uartFalTxISR() {
+//    ledOn(uartTxLed);
+//  }
+//
+//  void IRAM_ATTR uartRisTxISR() {
+//    ledOff(uartTxLed);
+//  }
+
 // блок setup() запускается только один раз – при загрузке:
 void setup() {
-  
-  pinMode(sensorLed, OUTPUT); 
+
+  pinMode(wlanLed, OUTPUT);
+  digitalWrite(wlanLed, LOW);
+
+  pinMode(sensorLed, OUTPUT);
   digitalWrite(sensorLed, LOW);
+
+  pinMode(uartTxLed, OUTPUT);
+  digitalWrite(uartTxLed, LOW);
+
+  pinMode(uartRxLed, OUTPUT);
+  digitalWrite(uartRxLed, LOW);
 
   // инициализируем последовательный порт (для отладочных целей):
   Serial.begin(115200);
+
+//  attachInterrupt(26, uartFalTxISR, FALLING );
+//  attachInterrupt(26, uartRisTxISR, RISING );
 
   sensor.begin(); // по умолчанию разрешение датчика – 9-битное;
   // если у вас какие-то проблемы, его имеет смысл
@@ -143,7 +172,7 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  
+
   Serial.println("");
   Serial.println("WiFi connected!"); // "Подключение к WiFi выполнено"
   Serial.println("Device IP address: ");
@@ -159,8 +188,8 @@ void loop() {
   WiFiClient wifi_client;
   Serial.println();
   Serial.print("Create WiFi client - ");
-  
-  if(!wifi_client.connect(host, port)){
+
+  if (!wifi_client.connect(host, port)) {
     Serial.println("Connection failed");
     return;
   }
@@ -172,28 +201,31 @@ void loop() {
   Serial.println(" - OK!");
   Serial.println();
 
-  if(sensor1CString==NULL) dtostrf(0.00, 2, 2, sensor1CString);
-  if(sensor2CString==NULL) dtostrf(0.00, 2, 2, sensor2CString);
-  if(sensor3CString==NULL) dtostrf(0.00, 2, 2, sensor3CString);
+  if (sensor1CString == NULL) dtostrf(0.00, 2, 2, sensor1CString);
+  if (sensor2CString == NULL) dtostrf(0.00, 2, 2, sensor2CString);
+  if (sensor3CString == NULL) dtostrf(0.00, 2, 2, sensor3CString);
 
   String postData = postData + "device=TEST&" + "sensor1=" + sensor1CString + "&" + "sensor2=" + sensor2CString + "&" + "sensor3=" + sensor3CString;
 
   HTTPClient http_client;
-  
-  http_client.begin("http://192.168.1.6/tcontrol_war_exploded/saveData");              //Specify request destination
+  ledOn(wlanLed);
+  http_client.begin("http://192.168.1.5/tcontrol_war_exploded/saveData");              //Specify request destination
   http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpCode = http_client.POST(postData);   //Send the request
+  ledOff(wlanLed);
   Serial.println(postData); //DEBUG
+  ledOn(wlanLed);
   String payload = http_client.getString();    //Get the response payload
+  ledOff(wlanLed);
 
 
   Serial.println(httpCode); //DEBUG
   Serial.println(payload); //DEBUG
 
   http_client.end();
-  
+
   delay(500);
-  if(wifi_client.connected()){
+  if (wifi_client.connected()) {
     wifi_client.stop();
   }
   Serial.println("Closing connection");
@@ -205,6 +237,6 @@ void loop() {
   Serial.print("Free RAM memory (Heap): ");
   Serial.println(ESP.getFreeHeap());
   Serial.println();
-  Serial.println("*************************************************"); 
+  Serial.println("*************************************************");
   delay(1000);
 }
